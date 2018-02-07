@@ -74,8 +74,10 @@ public:
     , m_serviceEmergency()
     , m_serviceUpdateParams()
     , m_subscribeCmdVel()
+    , m_subscribeCmdPos()
     , m_subscribeCmdFullState()
     , m_subscribeExternalPosition()
+    , m_subscribeBExternalPosition()
     , m_pubImu()
     , m_pubTemp()
     , m_pubMag()
@@ -237,6 +239,20 @@ private:
       m_sentSetpoint = true;
     }
   }
+  
+  void cmdPosChanged(
+    const geometry_msgs::Point::ConstPtr& msg)
+  {
+    if (!m_isEmergency) {
+      float roll = msg->y;
+      float pitch = -msg->x;
+      float yawrate = 0;
+      uint16_t thrust = msg->z * 1000;
+
+      m_cf.sendSetpoint(roll, pitch, yawrate, thrust);
+      m_sentSetpoint = true;
+    }
+  }
 
   void cmdFullStateSetpoint(
     const crazyflie_driver::FullState::ConstPtr& msg)
@@ -278,6 +294,13 @@ private:
     m_cf.sendExternalPositionUpdate(msg->point.x, msg->point.y, msg->point.z);
     m_sentExternalPosition = true;
   }
+  
+  void BroadcastPositionMeasurementChanged(
+    const geometry_msgs::PointStamped::ConstPtr& msg)
+  {
+    m_cf.sendBPositionUpdate(msg->point.x*8000, msg->point.y*8000, msg->point.z*8000, 0,0,0,0,0,0);
+    m_sentExternalPosition = true;
+  }
 
   void run()
   {
@@ -285,8 +308,10 @@ private:
     n.setCallbackQueue(&m_callback_queue);
 
     m_subscribeCmdVel = n.subscribe(m_tf_prefix + "/cmd_vel", 1, &CrazyflieROS::cmdVelChanged, this);
+    m_subscribeCmdPos = n.subscribe(m_tf_prefix + "/cmd_pos", 1, &CrazyflieROS::cmdPosChanged, this);
     m_subscribeCmdFullState = n.subscribe(m_tf_prefix + "/cmd_full_state", 1, &CrazyflieROS::cmdFullStateSetpoint, this);
     m_subscribeExternalPosition = n.subscribe(m_tf_prefix + "/external_position", 1, &CrazyflieROS::positionMeasurementChanged, this);
+    m_subscribeBExternalPosition = n.subscribe(m_tf_prefix + "/external_position_broad", 1, &CrazyflieROS::BroadcastPositionMeasurementChanged, this);
     m_serviceEmergency = n.advertiseService(m_tf_prefix + "/emergency", &CrazyflieROS::emergency, this);
 
     if (m_enable_logging_imu) {
@@ -584,8 +609,10 @@ private:
   ros::ServiceServer m_serviceEmergency;
   ros::ServiceServer m_serviceUpdateParams;
   ros::Subscriber m_subscribeCmdVel;
+  ros::Subscriber m_subscribeCmdPos;
   ros::Subscriber m_subscribeCmdFullState;
   ros::Subscriber m_subscribeExternalPosition;
+  ros::Subscriber m_subscribeBExternalPosition;
   ros::Publisher m_pubImu;
   ros::Publisher m_pubTemp;
   ros::Publisher m_pubMag;

@@ -93,6 +93,11 @@ public:
     float x,
     float y,
     float z);
+    
+  void sendBPositionUpdate(
+    int16_t x0, int16_t y0, int16_t z0,
+    int16_t x1, int16_t y1, int16_t z1,
+    int16_t x2, int16_t y2, int16_t z2);
 
   void sendPing();
 
@@ -212,11 +217,15 @@ private:
   bool sendPacket(
     const uint8_t* data,
     uint32_t length);
+    
+  void sendBPacket(
+    const uint8_t* data,
+    uint32_t length);
 
- void sendPacketOrTimeout(
-   const uint8_t* data,
-   uint32_t length,
-   float timeout = 1.0);
+  void sendPacketOrTimeout(
+    const uint8_t* data,
+    uint32_t length,
+    float timeout = 1.0);
 
   void handleAck(
     const Crazyradio::Ack& result);

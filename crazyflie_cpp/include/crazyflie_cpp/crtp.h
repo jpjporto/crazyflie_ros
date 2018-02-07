@@ -432,6 +432,36 @@ struct crtpExternalPositionUpdate
   float z;
 }  __attribute__((packed));
 
+struct crtpBPositionUpdate
+{
+  crtpBPositionUpdate(
+    int16_t x0, int16_t y0, int16_t z0,
+    int16_t x1, int16_t y1, int16_t z1,
+    int16_t x2, int16_t y2, int16_t z2)
+    : header(0x06, 2)
+    , x0(x0)
+    , y0(y0)
+    , z0(z0)
+    , x1(x1)
+    , y1(y1)
+    , z1(z1)
+    , x2(x2)
+    , y2(y2)
+    , z2(z2)
+  {
+  }
+  const crtp header;
+  int16_t x0;
+  int16_t y0;
+  int16_t z0;
+  int16_t x1;
+  int16_t y1;
+  int16_t z1;
+  int16_t x2;
+  int16_t y2;
+  int16_t z2;
+}  __attribute__((packed));
+
 
 // Port 0x07 (Generic Setpoint)
 

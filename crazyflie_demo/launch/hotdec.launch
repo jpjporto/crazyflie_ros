@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="uri" default="radio://0/100/2M" />
+  <arg name="frame" default="/vicon/cf/cf" />
+  <arg name="server" default="192.168.1.3" />
+
+  <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch">
+  </include>
+
+  <group ns="crazyflie">
+    <node pkg="crazyflie_driver" type="crazyflie_add" name="crazyflie_add" output="screen">
+      <param name="uri" value="$(arg uri)" />
+      <param name="tf_prefix" value="crazyflie" />
+      <param name="enable_logging_imu" value="False" />
+      <param name="enable_logging_temperature" value="False" />
+      <param name="enable_logging_magnetic_field" value="False" />
+      <param name="enable_logging_pressure" value="False" />
+      <param name="enable_logging_battery" value="False" />
+      <param name="enable_logging_packets" value="False" />
+      <rosparam>
+        genericLogTopics: ["log1"]
+        genericLogTopicFrequencies: [100]
+        genericLogTopic_log1_Variables: ["stateEstimate.x", "stateEstimate.y", "stateEstimate.z"]
+      </rosparam>
+    </node>
+
+    <node name="pose" pkg="crazyflie_demo" type="publish_external_position_vicon.py" output="screen">
+      <param name="topic" value="$(arg frame)" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="baselink_broadcaster" args="0 0 0 0 0 0 1 $(arg frame) /crazyflie/base_link 100" />
+  </group>
+
+  <!-- run vrpn -->
+  <include file="$(find vrpn_client_ros)/launch/vicon.launch"/>
+  <node pkg="vrpn_client_ros" name="vrpn" output="screen" type="vrpn_client_node">
+    <rosparam subst_value="true">
+      server: $(arg server)
+      port: 3883
+      update_frequency: 100.0
+      frame_id: world
+      use_server_time: false
+      broadcast_tf: true
+      refresh_tracker_frequency: 1.0
+    </rosparam>
+  </node>
+
+</launch>

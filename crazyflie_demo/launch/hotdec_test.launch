@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="uri" default="radio://0/100/2M" />
+  <arg name="frame" default="/vicon/cf/cf" />
+
+  <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch">
+  </include>
+
+  <group ns="crazyflie">
+    <node pkg="crazyflie_driver" type="crazyflie_add" name="crazyflie_add" output="screen">
+      <param name="uri" value="$(arg uri)" />
+      <param name="tf_prefix" value="crazyflie" />
+      <param name="enable_logging_imu" value="False" />
+      <param name="enable_logging_temperature" value="False" />
+      <param name="enable_logging_magnetic_field" value="False" />
+      <param name="enable_logging_pressure" value="False" />
+      <param name="enable_logging_battery" value="False" />
+      <param name="enable_logging_packets" value="False" />
+      <rosparam>
+        genericLogTopics: ["log1"]
+        genericLogTopicFrequencies: [100]
+        genericLogTopic_log1_Variables: ["ext_pos.X", "ext_pos.Y", "ext_pos.Z"]
+      </rosparam>
+    </node>
+
+    <node name="pose" pkg="crazyflie_demo" type="extPos_test.py" output="screen">
+      <param name="topic" value="$(arg frame)" />
+    </node>
+    
+
+  </group>
+
+
+</launch>

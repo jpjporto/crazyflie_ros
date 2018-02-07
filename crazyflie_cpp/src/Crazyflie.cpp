@@ -151,6 +151,15 @@ void Crazyflie::sendExternalPositionUpdate(
   sendPacket((const uint8_t*)&position, sizeof(position));
 }
 
+void Crazyflie::sendBPositionUpdate(
+  int16_t x0, int16_t y0, int16_t z0,
+  int16_t x1, int16_t y1, int16_t z1,
+  int16_t x2, int16_t y2, int16_t z2)
+{
+  crtpBPositionUpdate position(x0, y0, z0, x1, y1, z1, x2, y2, z2);
+  sendBPacket((const uint8_t*)&position, sizeof(position));
+}
+
 void Crazyflie::sendPing()
 {
   uint8_t ping = 0xFF;
@@ -602,10 +611,30 @@ bool Crazyflie::sendPacket(
   return ack.ack;
 }
 
- void Crazyflie::sendPacketOrTimeout(
-   const uint8_t* data,
-   uint32_t length,
-   float timeout)
+void Crazyflie::sendBPacket(
+  const uint8_t* data,
+  uint32_t length)
+{
+  std::unique_lock<std::mutex> mlock(g_radioMutex[m_devId]);
+  if (m_radio->getAddress() != m_address) {
+    m_radio->setAddress(m_address);
+  }
+  if (m_radio->getChannel() != m_channel) {
+    m_radio->setChannel(m_channel);
+  }
+  if (m_radio->getDatarate() != m_datarate) {
+    m_radio->setDatarate(m_datarate);
+  }
+  if (m_radio->getAckEnable()) {
+    m_radio->setAckEnable(false);
+  }
+  m_radio->sendPacketNoAck(data, length);
+}
+
+void Crazyflie::sendPacketOrTimeout(
+  const uint8_t* data,
+  uint32_t length,
+  float timeout)
 {
   auto start = std::chrono::system_clock::now();
   while (!sendPacket(data, length)) {
@@ -637,6 +666,9 @@ void Crazyflie::sendPacket(
     }
     if (m_radio->getDatarate() != m_datarate) {
       m_radio->setDatarate(m_datarate);
+    }
+    if (!m_radio->getAckEnable()) {
+      m_radio->setAckEnable(true);
     }
     m_radio->sendPacket(data, length, ack);
   } else {
