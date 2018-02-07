@@ -160,6 +160,15 @@ void Crazyflie::sendBPositionUpdate(
   sendBPacket((const uint8_t*)&position, sizeof(position));
 }
 
+void Crazyflie::sendBroadcastSetpoint(
+  int16_t x0, int16_t y0, int16_t z0,
+  int16_t x1, int16_t y1, int16_t z1,
+  int16_t x2, int16_t y2, int16_t z2)
+{
+  crtpBroadcastSetpoint setpoint(x0, y0, z0, x1, y1, z1, x2, y2, z2);
+  sendBPacket((const uint8_t*)&setpoint, sizeof(setpoint));
+}
+
 void Crazyflie::sendPing()
 {
   uint8_t ping = 0xFF;
