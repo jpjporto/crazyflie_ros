@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     viconpos_pub = n.advertise<geometry_msgs::PointStamped>("external_position", 1);
     wptarget_pub = n.advertise<geometry_msgs::Point>("cmd_pos", 1);
 
-    ros::Subscriber vicon_pos = n.subscribe("/vrpn_client_node/hotdec_cf1/pose", 1, sendPos);
+    ros::Subscriber vicon_pos = n.subscribe("/vrpn/hotdec_cf1/pose", 1, sendPos);
     ros::Subscriber waypoint = n.subscribe("/waypoints", 1, sendWP);
     
     ros::spin();

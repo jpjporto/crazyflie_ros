@@ -104,6 +104,8 @@ add_executable(quadrotor_teleop src/quadrotor_teleop.cpp)
 
 add_executable(ext_pos_vicon src/ext_pos_vicon.cpp)
 
+add_executable(fake_vicon src/fake_vicon.cpp)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(crazyflie_demo_node crazyflie_demo_generate_messages_cpp)
@@ -114,6 +116,10 @@ target_link_libraries(quadrotor_teleop
 )
 
 target_link_libraries(ext_pos_vicon
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(fake_vicon
   ${catkin_LIBRARIES}
 )
 

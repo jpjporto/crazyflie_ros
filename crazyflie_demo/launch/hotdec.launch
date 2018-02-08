@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="uri" default="radio://0/100/2M" />
+  <arg name="uri" default="radio://0/100/2M/E7E7E7E702" />
   <arg name="frame" default="/vicon/cf/cf" />
-  <arg name="server" default="192.168.1.3" />
+  <arg name="server" default="192.168.1.2" />
 
   <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch">
   </include>
@@ -24,7 +24,7 @@
       </rosparam>
     </node>
 
-    <node name="pose" pkg="crazyflie_demo" type="publish_external_position_vicon.py" output="screen">
+    <node name="ext_pos_vicon" pkg="crazyflie_demo" type="ext_pos_vicon" output="screen">
       <param name="topic" value="$(arg frame)" />
     </node>
 
@@ -32,7 +32,7 @@
   </group>
 
   <!-- run vrpn -->
-  <include file="$(find vrpn_client_ros)/launch/vicon.launch"/>
+  <include file="$(find vrpn_client_ros)/launch/sample.launch"/>
   <node pkg="vrpn_client_ros" name="vrpn" output="screen" type="vrpn_client_node">
     <rosparam subst_value="true">
       server: $(arg server)

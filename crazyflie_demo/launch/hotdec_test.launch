@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="uri" default="radio://0/100/2M" />
+  <arg name="uri" default="radio://0/100/2M/E7E7E7E702" />
   <arg name="frame" default="/vicon/cf/cf" />
+  <arg name="server" default="192.168.1.2" />
 
   <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch">
   </include>
@@ -19,16 +20,24 @@
       <rosparam>
         genericLogTopics: ["log1"]
         genericLogTopicFrequencies: [100]
-        genericLogTopic_log1_Variables: ["ext_pos.X", "ext_pos.Y", "ext_pos.Z"]
+        genericLogTopic_log1_Variables: ["stateEstimate.x", "stateEstimate.y", "stateEstimate.z"]
       </rosparam>
     </node>
 
-    <node name="pose" pkg="crazyflie_demo" type="extPos_test.py" output="screen">
-      <param name="topic" value="$(arg frame)" />
-    </node>
-    
-
   </group>
 
+  <!-- run vrpn -->
+  <include file="$(find vrpn_client_ros)/launch/sample.launch"/>
+  <node pkg="vrpn_client_ros" name="vrpn" output="screen" type="vrpn_client_node">
+    <rosparam subst_value="true">
+      server: $(arg server)
+      port: 3883
+      update_frequency: 100.0
+      frame_id: world
+      use_server_time: false
+      broadcast_tf: true
+      refresh_tracker_frequency: 1.0
+    </rosparam>
+  </node>
 
 </launch>
