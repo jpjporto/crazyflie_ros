@@ -435,28 +435,34 @@ struct crtpExternalPositionUpdate
 struct crtpBPositionUpdate
 {
   crtpBPositionUpdate(
-    int16_t x0, int16_t y0, int16_t z0,
-    int16_t x1, int16_t y1, int16_t z1,
-    int16_t x2, int16_t y2, int16_t z2)
+    uint8_t seq0, int16_t x0, int16_t y0, int16_t z0,
+    uint8_t seq1, int16_t x1, int16_t y1, int16_t z1,
+    uint8_t seq2, int16_t x2, int16_t y2, int16_t z2)
     : header(0x06, 2)
+    , seq0(seq0)
     , x0(x0)
     , y0(y0)
     , z0(z0)
+    , seq1(seq1)
     , x1(x1)
     , y1(y1)
     , z1(z1)
+    , seq2(seq2)
     , x2(x2)
     , y2(y2)
     , z2(z2)
   {
   }
   const crtp header;
+  uint8_t seq0;
   int16_t x0;
   int16_t y0;
   int16_t z0;
+  uint8_t seq1;
   int16_t x1;
   int16_t y1;
   int16_t z1;
+  uint8_t seq2;
   int16_t x2;
   int16_t y2;
   int16_t z2;
@@ -464,11 +470,12 @@ struct crtpBPositionUpdate
 
 struct crtpBroadcastSetpoint
 {
-  crtpBroadcastSetpoint(
+  crtpBroadcastSetpoint(uint8_t seq,
     int16_t x0, int16_t y0, int16_t z0,
     int16_t x1, int16_t y1, int16_t z1,
     int16_t x2, int16_t y2, int16_t z2)
     : header(0x03, 1)
+    , seq(seq)
     , x0(x0)
     , y0(y0)
     , z0(z0)
@@ -481,6 +488,7 @@ struct crtpBroadcastSetpoint
   {
   }
   const crtp header;
+  uint8_t seq;
   int16_t x0;
   int16_t y0;
   int16_t z0;

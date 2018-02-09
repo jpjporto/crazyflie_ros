@@ -95,11 +95,11 @@ public:
     float z);
     
   void sendBPositionUpdate(
-    int16_t x0, int16_t y0, int16_t z0,
-    int16_t x1, int16_t y1, int16_t z1,
-    int16_t x2, int16_t y2, int16_t z2);
+    uint8_t seq0, int16_t x0, int16_t y0, int16_t z0,
+    uint8_t seq1, int16_t x1, int16_t y1, int16_t z1,
+    uint8_t seq2, int16_t x2, int16_t y2, int16_t z2);
     
-  void sendBroadcastSetpoint(
+  void sendBroadcastSetpoint(uint8_t seq,
     int16_t x0, int16_t y0, int16_t z0,
     int16_t x1, int16_t y1, int16_t z1,
     int16_t x2, int16_t y2, int16_t z2);
