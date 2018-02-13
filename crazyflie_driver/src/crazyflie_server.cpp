@@ -75,6 +75,7 @@ public:
     , m_serviceUpdateParams()
     , m_subscribeCmdVel()
     , m_subscribeCmdPos()
+    , m_subscribeCmdBPos()
     , m_subscribeCmdFullState()
     , m_subscribeExternalPosition()
     , m_subscribeBExternalPosition()
@@ -240,6 +241,18 @@ private:
     }
   }
   
+  void cmdBPosChanged(
+    const geometry_msgs::Point::ConstPtr& msg)
+  {
+    static uint8_t seq = 0;
+    if (!m_isEmergency) {
+      seq++;
+
+      m_cf.sendBroadcastSetpoint(seq, msg->x*1000, msg->y*1000, 0, 0,0,0,0,0,0);
+      m_sentSetpoint = true;
+    }
+  }
+  
   void cmdPosChanged(
     const geometry_msgs::Point::ConstPtr& msg)
   {
@@ -298,7 +311,9 @@ private:
   void BroadcastPositionMeasurementChanged(
     const geometry_msgs::PointStamped::ConstPtr& msg)
   {
-    m_cf.sendBPositionUpdate(msg->point.x*8000, msg->point.y*8000, msg->point.z*8000, 0,0,0,0,0,0);
+    static uint8_t seq = 0;
+    seq++;
+    m_cf.sendBPositionUpdate(seq, msg->point.x*8000, msg->point.y*8000, msg->point.z*8000, 0,0,0,0,0,0,0,0);
     m_sentExternalPosition = true;
   }
 
@@ -309,6 +324,7 @@ private:
 
     m_subscribeCmdVel = n.subscribe(m_tf_prefix + "/cmd_vel", 1, &CrazyflieROS::cmdVelChanged, this);
     m_subscribeCmdPos = n.subscribe(m_tf_prefix + "/cmd_pos", 1, &CrazyflieROS::cmdPosChanged, this);
+    m_subscribeCmdBPos = n.subscribe(m_tf_prefix + "/broadcast_setpoint", 1, &CrazyflieROS::cmdBPosChanged, this);
     m_subscribeCmdFullState = n.subscribe(m_tf_prefix + "/cmd_full_state", 1, &CrazyflieROS::cmdFullStateSetpoint, this);
     m_subscribeExternalPosition = n.subscribe(m_tf_prefix + "/external_position", 1, &CrazyflieROS::positionMeasurementChanged, this);
     m_subscribeBExternalPosition = n.subscribe(m_tf_prefix + "/external_position_broad", 1, &CrazyflieROS::BroadcastPositionMeasurementChanged, this);
@@ -610,6 +626,7 @@ private:
   ros::ServiceServer m_serviceUpdateParams;
   ros::Subscriber m_subscribeCmdVel;
   ros::Subscriber m_subscribeCmdPos;
+  ros::Subscriber m_subscribeCmdBPos;
   ros::Subscriber m_subscribeCmdFullState;
   ros::Subscriber m_subscribeExternalPosition;
   ros::Subscriber m_subscribeBExternalPosition;

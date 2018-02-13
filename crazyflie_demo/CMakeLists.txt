@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(crazyflie_demo)
 
+add_compile_options(-std=c++11)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -105,6 +108,7 @@ add_executable(quadrotor_teleop src/quadrotor_teleop.cpp)
 add_executable(ext_pos_vicon src/ext_pos_vicon.cpp)
 
 add_executable(fake_vicon src/fake_vicon.cpp)
+add_executable(setpoint_pub src/setpoint_pub.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -120,6 +124,10 @@ target_link_libraries(ext_pos_vicon
 )
 
 target_link_libraries(fake_vicon
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(setpoint_pub
   ${catkin_LIBRARIES}
 )
 

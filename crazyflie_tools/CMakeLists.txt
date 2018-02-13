@@ -117,13 +117,21 @@ target_link_libraries(flash
   ${Boost_LIBRARIES}
 )
 
-#add_executable(sendPosTest
-#  src/sendPos.cpp
-#)
-#target_link_libraries(sendPosTest
-#  ${catkin_LIBRARIES}
-#  ${Boost_LIBRARIES}
-#)
+add_executable(sendPosTest
+  src/sendPos.cpp
+)
+target_link_libraries(sendPosTest
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+add_executable(sendWPTest
+  src/sendWP.cpp
+)
+target_link_libraries(sendWPTest
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
 
 #############
 ## Install ##
