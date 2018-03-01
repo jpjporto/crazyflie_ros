@@ -20,7 +20,7 @@
       <rosparam>
         genericLogTopics: ["log1"]
         genericLogTopicFrequencies: [10]
-        genericLogTopic_log1_Variables: ["setpointvels.x", "setpointvels.y", "setpointvels.z"]
+        genericLogTopic_log1_Variables: ["hinf.seq", "hinf.c_mode", "hinf.p_mode"]
       </rosparam>
     </node>
 
