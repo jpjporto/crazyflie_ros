@@ -470,12 +470,13 @@ struct crtpBPositionUpdate
 
 struct crtpBroadcastSetpoint
 {
-  crtpBroadcastSetpoint(uint8_t seq,
+  crtpBroadcastSetpoint(uint8_t seq, uint8_t mode,
     int16_t x0, int16_t y0, int16_t z0,
     int16_t x1, int16_t y1, int16_t z1,
     int16_t x2, int16_t y2, int16_t z2)
     : header(0x03, 1)
     , seq(seq)
+    , mode(mode)
     , x0(x0)
     , y0(y0)
     , z0(z0)
@@ -489,6 +490,7 @@ struct crtpBroadcastSetpoint
   }
   const crtp header;
   uint8_t seq;
+  uint8_t mode;
   int16_t x0;
   int16_t y0;
   int16_t z0;

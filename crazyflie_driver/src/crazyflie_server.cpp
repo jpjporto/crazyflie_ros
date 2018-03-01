@@ -248,7 +248,7 @@ private:
     if (!m_isEmergency) {
       seq++;
 
-      m_cf.sendBroadcastSetpoint(seq, msg->x*1000, msg->y*1000, 0, 0,0,0,0,0,0);
+      m_cf.sendBroadcastSetpoint(seq, 1, msg->x*1000, msg->y*1000, 0, 0,0,0,0,0,0);
       m_sentSetpoint = true;
     }
   }
