@@ -19,8 +19,8 @@
       <param name="enable_logging_packets" value="False" />
       <rosparam>
         genericLogTopics: ["log1"]
-        genericLogTopicFrequencies: [100]
-        genericLogTopic_log1_Variables: ["stateEstimate.x", "stateEstimate.y", "stateEstimate.z"]
+        genericLogTopicFrequencies: [10]
+        genericLogTopic_log1_Variables: ["kalman.statePX", "kalman.statePY", "kalman.statePZ"]
       </rosparam>
     </node>
 
@@ -28,7 +28,6 @@
       <param name="topic" value="$(arg frame)" />
     </node>
 
-    <node pkg="tf" type="static_transform_publisher" name="baselink_broadcaster" args="0 0 0 0 0 0 1 $(arg frame) /crazyflie/base_link 100" />
   </group>
 
   <!-- run vrpn -->

@@ -1,17 +1,21 @@
 #include <cstdio>
 #include <iostream>
+#include <fstream>
 #include <cmath>
 
 #include "ros/ros.h"
+#include "ros/package.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/PointStamped.h"
-#include "ros/package.h"
+#include "crazyflie_driver/GenericLogData.h"
 
 
 ros::Publisher viconpos_pub;
-ros::Publisher wptarget_pub;
 
 geometry_msgs::PointStamped viconpos_msg;
+
+std::string dir_path;
+char time_buffer[80];
 
 void sendPos(const geometry_msgs::PoseStamped::ConstPtr& pose)
 {
@@ -33,10 +37,12 @@ void sendPos(const geometry_msgs::PoseStamped::ConstPtr& pose)
     viconpos_pub.publish(viconpos_msg);
 }
 
-void sendWP(const geometry_msgs::Point& point)
+void saveLog(const crazyflie_driver::GenericLogData::ConstPtr& log)
 {
-    //m_cf.sendSetpoint(point.y, -point.x, 0.0, point.z*1000);
-    wptarget_pub.publish(point);
+    std::ofstream positionFile;
+    positionFile.open (dir_path+"/logData_"+time_buffer+".txt", std::ios::app);
+    positionFile << log->values[0] << ", " << log->values[1] << ", " << log->values[2] << "\r\n";
+    positionFile.close();
 }
 
 int main(int argc, char **argv)
@@ -44,13 +50,19 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "ext_pos_vicon");
     ros::NodeHandle n;
     
+    dir_path = ros::package::getPath("crazyflie_hotdec");
+    time_t rawtime;
+    time(&rawtime);
+    struct tm * timeinfo;
+    timeinfo = localtime(&rawtime);
+    strftime(time_buffer, 80, "%G%m%dT%H%M%S", timeinfo);
+    
     viconpos_msg.header.seq = 0;
     
     viconpos_pub = n.advertise<geometry_msgs::PointStamped>("external_position", 1);
-    wptarget_pub = n.advertise<geometry_msgs::Point>("cmd_pos", 1);
 
     ros::Subscriber vicon_pos = n.subscribe("/vrpn/hotdec_cf1/pose", 1, sendPos);
-    ros::Subscriber waypoint = n.subscribe("/waypoints", 1, sendWP);
+    ros::Subscriber waypoint = n.subscribe("/crazyflie/log1", 1, saveLog);
     
     ros::spin();
     return 0;
