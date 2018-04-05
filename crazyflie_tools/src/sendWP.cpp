@@ -14,7 +14,7 @@ int main(int argc, char **argv)
     uint8_t seq = 0;
     for(int i=0; i<1000; i++)
     {
-        cf.sendBroadcastSetpoint(seq, 1, i*0.01*1000, i*0.01*1000, 0, 0,0,0, 0,0,0);
+        cf.sendBroadcastSetpoint(seq, 1, i*0.01*1000, i*0.01*1000, 0, 0,0,0, 0,0,0, 0,0,0);
         seq++;
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }

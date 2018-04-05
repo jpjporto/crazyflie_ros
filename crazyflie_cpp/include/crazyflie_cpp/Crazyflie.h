@@ -97,12 +97,14 @@ public:
   void sendBPositionUpdate(
     uint8_t seq0, int16_t x0, int16_t y0, int16_t z0,
     uint8_t seq1, int16_t x1, int16_t y1, int16_t z1,
-    uint8_t seq2, int16_t x2, int16_t y2, int16_t z2);
+    uint8_t seq2, int16_t x2, int16_t y2, int16_t z2,
+    uint8_t seq3, int16_t x3, int16_t y3, int16_t z3);
     
   void sendBroadcastSetpoint(uint8_t seq, uint8_t mode,
     int16_t x0, int16_t y0, int16_t z0,
     int16_t x1, int16_t y1, int16_t z1,
-    int16_t x2, int16_t y2, int16_t z2);
+    int16_t x2, int16_t y2, int16_t z2,
+    int16_t x3, int16_t y3, int16_t z3);
 
   void sendPing();
 
