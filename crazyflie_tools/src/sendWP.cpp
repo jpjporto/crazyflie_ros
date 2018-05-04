@@ -12,7 +12,7 @@ int main(int argc, char **argv)
   {
     Crazyflie cf("radio://0/100/2M/FFE7E7E7E7");
     uint8_t seq = 0;
-    for(int i=0; i<1000; i++)
+    for(int i=0; i<2000; i++)
     {
         cf.sendBroadcastSetpoint(seq, 1, i*0.01*1000, i*0.01*1000, 0, 0,0,0, 0,0,0, 0,0,0);
         seq++;
