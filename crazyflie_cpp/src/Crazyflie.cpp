@@ -8,7 +8,7 @@
 #include "Crazyradio.h"
 #include "CrazyflieUSB.h"
 
-#include <iostream>
+#include <fstream>
 #include <cstring>
 #include <stdexcept>
 #include <thread>
