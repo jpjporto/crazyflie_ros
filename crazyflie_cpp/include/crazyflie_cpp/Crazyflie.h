@@ -398,6 +398,9 @@ private:
   std::vector<batchRequest> m_batchRequests;
   size_t m_numRequestsFinished;
   
+  int m_curr_up;
+  int m_curr_down;
+  
   // logging
   Logger& m_logger;
 };

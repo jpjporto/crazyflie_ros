@@ -26,7 +26,8 @@ std::mutex g_crazyflieusbMutex[MAX_USB];
 
 
 Crazyflie::Crazyflie(
-  const std::string& link_uri)
+  const std::string& link_uri,
+  Logger& logger)
   : m_radio(nullptr)
   , m_transport(nullptr)
   , m_devId(0)
@@ -895,22 +896,7 @@ void Crazyflie::handleAck(
   else if (crtpParamTocGetItemResponse::match(result)) {
     // handled in batch system
   }
-  else if (crtpMemoryGetNumberResponse::match(result)) {
-    // handled in batch system
-  }
-  else if (crtpMemoryGetInfoResponse::match(result)) {
-    // handled in batch system
-  }
   else if (crtpParamValueResponse::match(result)) {
-    // handled in batch system
-  }
-  else if (crtpMemoryGetNumberResponse::match(result)) {
-    // handled in batch system
-  }
-  else if (crtpMemoryReadResponse::match(result)) {
-    // handled in batch system
-  }
-  else if (crtpMemoryWriteResponse::match(result)) {
     // handled in batch system
   }
   else if (crtp(result.data[0]).port == 8) {
