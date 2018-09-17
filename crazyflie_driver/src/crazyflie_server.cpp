@@ -248,7 +248,7 @@ private:
     if (!m_isEmergency) {
       seq++;
 
-      m_cf.sendBroadcastSetpoint(seq, msg->z, msg->x*1000, msg->y*1000, 0, 0,0,0,0,0,0,0,0,0);
+      m_cf.sendBroadcastSetpoint(seq, msg->z, msg->x*1000, msg->y*1000, 0, 0,0, 0,0, 0,0, 0,0);
       m_sentSetpoint = true;
     }
   }
@@ -313,7 +313,7 @@ private:
   {
     static uint8_t seq = 0;
     seq++;
-    m_cf.sendBPositionUpdate(seq, msg->point.x*8000, msg->point.y*8000, msg->point.z*8000, 0,0,0,0, 0,0,0,0, 0,0,0,0);
+    m_cf.sendBPositionUpdate(1, seq, msg->point.x*8000, msg->point.y*8000, msg->point.z*8000, 0,0,0,0, 0,0,0,0, 0,0,0,0);
     m_sentExternalPosition = true;
   }
 

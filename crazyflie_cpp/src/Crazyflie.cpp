@@ -151,43 +151,45 @@ void Crazyflie::sendExternalPositionUpdate(
   sendPacket((const uint8_t*)&position, sizeof(position));
 }
 
-void Crazyflie::sendMultiPositionUpdate(
+void Crazyflie::sendMultiPositionUpdate(uint8_t id,
   uint8_t seq0, int16_t x0, int16_t y0, int16_t z0,
   uint8_t seq1, int16_t x1, int16_t y1, int16_t z1,
   uint8_t seq2, int16_t x2, int16_t y2, int16_t z2,
   uint8_t seq3, int16_t x3, int16_t y3, int16_t z3)
 {
-  crtpBPositionUpdate position(seq0, x0, y0, z0, seq1, x1, y1, z1, seq2, x2, y2, z2, seq3, x3, y3, z3);
+  crtpBPositionUpdate position(id, seq0, x0, y0, z0, seq1, x1, y1, z1, seq2, x2, y2, z2, seq3, x3, y3, z3);
   sendPacket((const uint8_t*)&position, sizeof(position));
 }
 
-void Crazyflie::sendBPositionUpdate(
+void Crazyflie::sendBPositionUpdate(uint8_t id,
   uint8_t seq0, int16_t x0, int16_t y0, int16_t z0,
   uint8_t seq1, int16_t x1, int16_t y1, int16_t z1,
   uint8_t seq2, int16_t x2, int16_t y2, int16_t z2,
   uint8_t seq3, int16_t x3, int16_t y3, int16_t z3)
 {
-  crtpBPositionUpdate position(seq0, x0, y0, z0, seq1, x1, y1, z1, seq2, x2, y2, z2, seq3, x3, y3, z3);
+  crtpBPositionUpdate position(id, seq0, x0, y0, z0, seq1, x1, y1, z1, seq2, x2, y2, z2, seq3, x3, y3, z3);
   sendBPacket((const uint8_t*)&position, sizeof(position));
 }
 
 void Crazyflie::sendMultiSetpoint(uint8_t seq, uint8_t mode,
   int16_t x0, int16_t y0, int16_t z0,
-  int16_t x1, int16_t y1, int16_t z1,
-  int16_t x2, int16_t y2, int16_t z2,
-  int16_t x3, int16_t y3, int16_t z3)
+  int16_t x1, int16_t y1,
+  int16_t x2, int16_t y2,
+  int16_t x3, int16_t y3,
+  int16_t x4, int16_t y4)
 {
-  crtpBroadcastSetpoint setpoint(seq, mode, x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3);
-  sendBPacket((const uint8_t*)&setpoint, sizeof(setpoint));
+  crtpBroadcastSetpoint setpoint(seq, mode, x0, y0, z0, x1, y1, x2, y2, x3, y3, x4, y4); 
+  sendPacket((const uint8_t*)&setpoint, sizeof(setpoint));
 }
 
 void Crazyflie::sendBroadcastSetpoint(uint8_t seq, uint8_t mode,
   int16_t x0, int16_t y0, int16_t z0,
-  int16_t x1, int16_t y1, int16_t z1,
-  int16_t x2, int16_t y2, int16_t z2,
-  int16_t x3, int16_t y3, int16_t z3)
+  int16_t x1, int16_t y1,
+  int16_t x2, int16_t y2,
+  int16_t x3, int16_t y3,
+  int16_t x4, int16_t y4)
 {
-  crtpBroadcastSetpoint setpoint(seq, mode, x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3);
+  crtpBroadcastSetpoint setpoint(seq, mode, x0, y0, z0, x1, y1, x2, y2, x3, y3, x4, y4); 
   sendBPacket((const uint8_t*)&setpoint, sizeof(setpoint));
 }
 
