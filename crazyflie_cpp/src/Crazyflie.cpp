@@ -24,6 +24,7 @@ std::mutex g_radioMutex[MAX_RADIOS];
 CrazyflieUSB* g_crazyflieUSB[MAX_USB];
 std::mutex g_crazyflieusbMutex[MAX_USB];
 
+Logger EmptyLogger;
 
 Crazyflie::Crazyflie(
   const std::string& link_uri,
