@@ -501,73 +501,263 @@ void Crazyflie::readFlash(
   }
 }
 
-void Crazyflie::requestLogToc()
+void Crazyflie::requestLogToc(bool forceNoCache)
 {
-  // Find the number of log variables in TOC
-  crtpLogGetInfoRequest infoRequest;
+  m_log_param_use_V2 = true;
+  uint16_t len;
+  uint32_t crc;
+
+  crtpLogGetInfoV2Request infoRequest;
   startBatchRequest();
   addRequest(infoRequest, 1);
-  handleRequests();
-  size_t len = getRequestResult<crtpLogGetInfoResponse>(0)->log_len;
-  std::cout << "Log: " << len << std::endl;
+  try {
+    handleRequests();
+    len = getRequestResult<crtpLogGetInfoV2Response>(0)->log_len;
+    crc = getRequestResult<crtpLogGetInfoV2Response>(0)->log_crc;
+  } catch (std::runtime_error& e) {
+    // std::cout << "Fall back to V1 param API" << std::endl;
+    m_log_param_use_V2 = false;
 
-  // Request detailed information
-  startBatchRequest();
-  for (size_t i = 0; i < len; ++i) {
-    crtpLogGetItemRequest itemRequest(i);
-    addRequest(itemRequest, 2);
+    crtpLogGetInfoRequest infoRequest;
+    startBatchRequest();
+    addRequest(infoRequest, 1);
+    handleRequests();
+    len = getRequestResult<crtpLogGetInfoResponse>(0)->log_len;
+    crc = getRequestResult<crtpLogGetInfoResponse>(0)->log_crc;
+    // std::cout << len << std::endl;
   }
-  handleRequests();
 
-  // Update internal structure with obtained data
-  m_logTocEntries.resize(len);
-  for (size_t i = 0; i < len; ++i) {
-    auto response = getRequestResult<crtpLogGetItemResponse>(i);
-    LogTocEntry& entry = m_logTocEntries[i];
-    entry.id = i;
-    entry.type = (LogType)response->type;
-    entry.group = std::string(&response->text[0]);
-    entry.name = std::string(&response->text[entry.group.size() + 1]);
+  // check if it is in the cache
+  std::string fileName = "log" + std::to_string(crc) + ".csv";
+  std::ifstream infile(fileName);
+
+  if (forceNoCache || !infile.good()) {
+    m_logger.info("Log: " + std::to_string(len));
+
+    // Request detailed information
+    startBatchRequest();
+    if (m_log_param_use_V2) {
+      for (size_t i = 0; i < len; ++i) {
+        crtpLogGetItemV2Request itemRequest(i);
+        addRequest(itemRequest, 2);
+      }
+    } else {
+      for (size_t i = 0; i < len; ++i) {
+        crtpLogGetItemRequest itemRequest(i);
+        addRequest(itemRequest, 2);
+      }
+    }
+    handleRequests();
+
+    // Update internal structure with obtained data
+    m_logTocEntries.resize(len);
+    if (m_log_param_use_V2) {
+      for (size_t i = 0; i < len; ++i) {
+        auto response = getRequestResult<crtpLogGetItemV2Response>(i);
+        LogTocEntry& entry = m_logTocEntries[i];
+        entry.id = i;
+        entry.type = (LogType)response->type;
+        entry.group = std::string(&response->text[0]);
+        entry.name = std::string(&response->text[entry.group.size() + 1]);
+      }
+    } else {
+      for (size_t i = 0; i < len; ++i) {
+        auto response = getRequestResult<crtpLogGetItemResponse>(i);
+        LogTocEntry& entry = m_logTocEntries[i];
+        entry.id = i;
+        entry.type = (LogType)response->type;
+        entry.group = std::string(&response->text[0]);
+        entry.name = std::string(&response->text[entry.group.size() + 1]);
+      }
+    }
+
+    // Write a cache file
+    {
+      // Atomic file write: write in temporary file first to avoid race conditions
+      std::string fileNameTemp = fileName + ".tmp";
+      std::ofstream output(fileNameTemp);
+      output << "id,type,group,name" << std::endl;
+      for (const auto& entry : m_logTocEntries) {
+        output << std::to_string(entry.id) << ","
+               << std::to_string(entry.type) << ","
+               << entry.group << ","
+               << entry.name << std::endl;
+      }
+      // change the filename
+      rename(fileNameTemp.c_str(), fileName.c_str());
+    }
+  } else {
+    m_logger.info("Found variables in cache.");
+    m_logTocEntries.clear();
+    std::string line, cell;
+    std::getline(infile, line); // ignore header
+    while (std::getline(infile, line)) {
+      std::stringstream lineStream(line);
+      m_logTocEntries.resize(m_logTocEntries.size() + 1);
+      std::getline(lineStream, cell, ',');
+      m_logTocEntries.back().id = std::stoi(cell);
+      std::getline(lineStream, cell, ',');
+      m_logTocEntries.back().type = (LogType)std::stoi(cell);
+      std::getline(lineStream, cell, ',');
+      m_logTocEntries.back().group = cell;
+      std::getline(lineStream, cell, ',');
+      m_logTocEntries.back().name = cell;
+    }
   }
 }
 
-void Crazyflie::requestParamToc()
+void Crazyflie::requestParamToc(bool forceNoCache)
 {
+  bool hasV2_support = true;
+  uint16_t numParam;
+  uint32_t crc;
   // Find the number of parameters in TOC
-  crtpParamTocGetInfoRequest infoRequest;
+  crtpParamTocGetInfoV2Request infoRequest;
   startBatchRequest();
+  // std::cout << "infoReq" << std::endl;
   addRequest(infoRequest, 1);
-  handleRequests();
-  size_t len = getRequestResult<crtpParamTocGetInfoResponse>(0)->numParam;
+  try {
+    handleRequests();
+    numParam = getRequestResult<crtpParamTocGetInfoV2Response>(0)->numParam;
+    crc = getRequestResult<crtpParamTocGetInfoV2Response>(0)->crc;
+  } catch (std::runtime_error& e) {
+    // std::cout << "Fall back to V1 param API" << std::endl;
+    hasV2_support = false;
 
-  std::cout << "Params: " << len << std::endl;
-
-  // Request detailed information and values
-  startBatchRequest();
-  for (size_t i = 0; i < len; ++i) {
-    crtpParamTocGetItemRequest itemRequest(i);
-    addRequest(itemRequest, 2);
-    crtpParamReadRequest readRequest(i);
-    addRequest(readRequest, 1);
+    crtpParamTocGetInfoRequest infoRequest;
+    startBatchRequest();
+    addRequest(infoRequest, 1);
+    handleRequests();
+    numParam = getRequestResult<crtpParamTocGetInfoResponse>(0)->numParam;
+    crc = getRequestResult<crtpParamTocGetInfoResponse>(0)->crc;
   }
-  handleRequests();
 
-  // Update internal structure with obtained data
-  m_paramTocEntries.resize(len);
-  for (size_t i = 0; i < len; ++i) {
-    auto r = getRequestResult<crtpParamTocGetItemResponse>(i*2+0);
-    auto val = getRequestResult<crtpParamValueResponse>(i*2+1);
+  // check if it is in the cache
+  std::string fileName = "params" + std::to_string(crc) + ".csv";
+  std::ifstream infile(fileName);
 
-    ParamTocEntry& entry = m_paramTocEntries[i];
-    entry.id = i;
-    entry.type = (ParamType)(r->length | r-> type << 2 | r->sign << 3);
-    entry.readonly = r->readonly;
-    entry.group = std::string(&r->text[0]);
-    entry.name = std::string(&r->text[entry.group.size() + 1]);
+  if (forceNoCache || !infile.good()) {
+    m_logger.info("Params: " + std::to_string(numParam));
 
-    ParamValue v;
-    std::memcpy(&v, &val->valueFloat, 4);
-    m_paramValues[i] = v;
+    // Request detailed information and values
+    startBatchRequest();
+    if (!hasV2_support) {
+      for (uint16_t i = 0; i < numParam; ++i) {
+        crtpParamTocGetItemRequest itemRequest(i);
+        addRequest(itemRequest, 2);
+        crtpParamReadRequest readRequest(i);
+        addRequest(readRequest, 1);
+      }
+    } else {
+      for (uint16_t i = 0; i < numParam; ++i) {
+        crtpParamTocGetItemV2Request itemRequest(i);
+        addRequest(itemRequest, 2);
+        crtpParamReadV2Request readRequest(i);
+        addRequest(readRequest, 1);
+      }
+    }
+    handleRequests();
+    // Update internal structure with obtained data
+    m_paramTocEntries.resize(numParam);
+
+    if (!hasV2_support) {
+      for (uint16_t i = 0; i < numParam; ++i) {
+        auto r = getRequestResult<crtpParamTocGetItemResponse>(i*2+0);
+        auto val = getRequestResult<crtpParamValueResponse>(i*2+1);
+
+        ParamTocEntry& entry = m_paramTocEntries[i];
+        entry.id = i;
+        entry.type = (ParamType)(r->length | r-> type << 2 | r->sign << 3);
+        entry.readonly = r->readonly;
+        entry.group = std::string(&r->text[0]);
+        entry.name = std::string(&r->text[entry.group.size() + 1]);
+
+        ParamValue v;
+        std::memcpy(&v, &val->valueFloat, 4);
+        m_paramValues[i] = v;
+      }
+    } else {
+      for (uint16_t i = 0; i < numParam; ++i) {
+        auto r = getRequestResult<crtpParamTocGetItemV2Response>(i*2+0);
+        auto val = getRequestResult<crtpParamValueV2Response>(i*2+1);
+
+        ParamTocEntry& entry = m_paramTocEntries[i];
+        entry.id = i;
+        entry.type = (ParamType)(r->length | r-> type << 2 | r->sign << 3);
+        entry.readonly = r->readonly;
+        entry.group = std::string(&r->text[0]);
+        entry.name = std::string(&r->text[entry.group.size() + 1]);
+
+        ParamValue v;
+        std::memcpy(&v, &val->valueFloat, 4);
+        m_paramValues[i] = v;
+      }
+    }
+
+    // Write a cache file
+    {
+      // Atomic file write: write in temporary file first to avoid race conditions
+      std::string fileNameTemp = fileName + ".tmp";
+      std::ofstream output(fileNameTemp);
+      output << "id,type,readonly,group,name" << std::endl;
+      for (const auto& entry : m_paramTocEntries) {
+        output << std::to_string(entry.id) << ","
+               << std::to_string(entry.type) << ","
+               << std::to_string(entry.readonly) << ","
+               << entry.group << ","
+               << entry.name << std::endl;
+      }
+      // change the filename
+      rename(fileNameTemp.c_str(), fileName.c_str());
+    }
+  } else {
+    m_logger.info("Found variables in cache.");
+    m_paramTocEntries.clear();
+    std::string line, cell;
+    std::getline(infile, line); // ignore header
+    while (std::getline(infile, line)) {
+      std::stringstream lineStream(line);
+      m_paramTocEntries.resize(m_paramTocEntries.size() + 1);
+      std::getline(lineStream, cell, ',');
+      m_paramTocEntries.back().id = std::stoi(cell);
+      std::getline(lineStream, cell, ',');
+      m_paramTocEntries.back().type = (ParamType)std::stoi(cell);
+      std::getline(lineStream, cell, ',');
+      m_paramTocEntries.back().readonly = std::stoi(cell);
+      std::getline(lineStream, cell, ',');
+      m_paramTocEntries.back().group = cell;
+      std::getline(lineStream, cell, ',');
+      m_paramTocEntries.back().name = cell;
+    }
+
+    // Request values
+    if (!hasV2_support) {
+      startBatchRequest();
+      for (size_t i = 0; i < numParam; ++i) {
+        crtpParamReadRequest readRequest(i);
+        addRequest(readRequest, 1);
+      }
+      handleRequests();
+      for (size_t i = 0; i < numParam; ++i) {
+        auto val = getRequestResult<crtpParamValueResponse>(i);
+        ParamValue v;
+        std::memcpy(&v, &val->valueFloat, 4);
+        m_paramValues[i] = v;
+      }
+    } else {
+      startBatchRequest();
+      for (size_t i = 0; i < numParam; ++i) {
+        crtpParamReadV2Request readRequest(i);
+        addRequest(readRequest, 1);
+      }
+      handleRequests();
+      for (size_t i = 0; i < numParam; ++i) {
+        auto val = getRequestResult<crtpParamValueV2Response>(i);
+        ParamValue v;
+        std::memcpy(&v, &val->valueFloat, 4);
+        m_paramValues[i] = v;
+      }
+    }
   }
 }
 
@@ -635,15 +825,6 @@ void Crazyflie::setParam(uint8_t id, const ParamValue& value) {
   m_paramValues[id] = value;
 }
 
-bool Crazyflie::sendPacket(
-  const uint8_t* data,
-  uint32_t length)
-{
-  Crazyradio::Ack ack;
-  sendPacket(data, length, ack);
-  return ack.ack;
-}
-
 void Crazyflie::sendBPacket(
   const uint8_t* data,
   uint32_t length)
@@ -664,13 +845,24 @@ void Crazyflie::sendBPacket(
   m_radio->sendPacketNoAck(data, length);
 }
 
-void Crazyflie::sendPacketOrTimeout(
+bool Crazyflie::sendPacket(
   const uint8_t* data,
   uint32_t length,
-  float timeout)
+  bool useSafeLink)
+{
+  Crazyradio::Ack ack;
+  sendPacket(data, length, ack, useSafeLink);
+  return ack.ack;
+}
+
+ void Crazyflie::sendPacketOrTimeout(
+   const uint8_t* data,
+   uint32_t length,
+   bool useSafeLink,
+   float timeout)
 {
   auto start = std::chrono::system_clock::now();
-  while (!sendPacket(data, length)) {
+  while (!sendPacket(data, length, useSafeLink)) {
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsedSeconds = end-start;
     if (elapsedSeconds.count() > timeout) {
@@ -682,7 +874,8 @@ void Crazyflie::sendPacketOrTimeout(
 void Crazyflie::sendPacket(
   const uint8_t* data,
   uint32_t length,
-  Crazyradio::Ack& ack)
+  Crazyradio::Ack& ack,
+  bool useSafeLink)
 {
   static uint32_t numPackets = 0;
   static uint32_t numAcks = 0;
@@ -703,7 +896,26 @@ void Crazyflie::sendPacket(
     if (!m_radio->getAckEnable()) {
       m_radio->setAckEnable(true);
     }
-    m_radio->sendPacket(data, length, ack);
+    // consider safelink here:
+    //    Adds 1bit counter to CRTP header to guarantee that no ack (downlink)
+    //    payload are lost and no uplink packet are duplicated.
+    //    The caller should resend packet if not acked (ie. same as with a
+    //    direct call to crazyradio.send_packet)
+    if (useSafeLink) {
+      std::vector<uint8_t> dataCopy(data, data + length);
+      dataCopy[0] &= 0xF3;
+      dataCopy[0] |= m_curr_up << 3 | m_curr_down << 2;
+      m_radio->sendPacket(dataCopy.data(), length, ack);
+      if (ack.ack && ack.size > 0 && (ack.data[0] & 0x04) == (m_curr_down << 2)) {
+        m_curr_down = 1 - m_curr_down;
+      }
+      if (ack.ack) {
+        m_curr_up = 1 - m_curr_up;
+      }
+    } else {
+      m_radio->sendPacket(data, length, ack);
+    }
+
   } else {
     std::unique_lock<std::mutex> mlock(g_crazyflieusbMutex[m_devId]);
     m_transport->sendPacket(data, length, ack);
@@ -753,7 +965,7 @@ void Crazyflie::handleAck(
       iter->second(r, result.size - 5);
     }
     else {
-      std::cout << "Received unrequested data for block: " << (int)r->blockId << std::endl;
+      m_logger.warning("Received unrequested data for block: " + std::to_string((int)r->blockId));
     }
   }
   else if (crtpParamTocGetInfoResponse::match(result)) {
@@ -762,7 +974,31 @@ void Crazyflie::handleAck(
   else if (crtpParamTocGetItemResponse::match(result)) {
     // handled in batch system
   }
+  else if (crtpParamTocGetInfoV2Response::match(result)) {
+    // handled in batch system
+  }
+  else if (crtpParamTocGetItemV2Response::match(result)) {
+    // handled in batch system
+  }
+  else if (crtpMemoryGetNumberResponse::match(result)) {
+    // handled in batch system
+  }
+  else if (crtpMemoryGetInfoResponse::match(result)) {
+    // handled in batch system
+  }
   else if (crtpParamValueResponse::match(result)) {
+    // handled in batch system
+  }
+  else if (crtpMemoryGetNumberResponse::match(result)) {
+    // handled in batch system
+  }
+  else if (crtpMemoryReadResponse::match(result)) {
+    // handled in batch system
+  }
+  else if (crtpMemoryWriteResponse::match(result)) {
+    // handled in batch system
+  }
+  else if (crtp(result.data[0]).port == 8) {
     // handled in batch system
   }
   else if (crtpPlatformRSSIAck::match(result)) {
@@ -773,7 +1009,9 @@ void Crazyflie::handleAck(
   }
   else {
     crtp* header = (crtp*)result.data;
-    std::cout << "Don't know ack: Port: " << (int)header->port << " Channel: " << (int)header->channel << " Len: " << (int)result.size << std::endl;
+    m_logger.warning("Don't know ack: Port: " + std::to_string((int)header->port)
+      + " Channel: " + std::to_string((int)header->channel)
+      + " Len: " + std::to_string((int)result.size));
     // for (size_t i = 1; i < result.size; ++i) {
     //   std::cout << "    " << (int)result.data[i] << std::endl;
     // }
@@ -842,6 +1080,8 @@ void Crazyflie::addRequest(
 }
 
 void Crazyflie::handleRequests(
+  bool crtpMode,
+  bool useSafeLink,
   float baseTime,
   float timePerRequest)
 {
@@ -853,12 +1093,12 @@ void Crazyflie::handleRequests(
   float timeout = baseTime + timePerRequest * m_batchRequests.size();
 
   while (true) {
-    if (!sendPing) {
+    if (!crtpMode || !sendPing) {
       for (const auto& request : m_batchRequests) {
         if (!request.finished) {
           // std::cout << "sendReq" << std::endl;
-          sendPacket(request.request.data(), request.request.size(), ack);
-          handleBatchAck(ack);
+          sendPacket(request.request.data(), request.request.size(), ack, useSafeLink);
+          handleBatchAck(ack, crtpMode);
 
           auto end = std::chrono::system_clock::now();
           std::chrono::duration<double> elapsedSeconds = end-start;
@@ -871,8 +1111,8 @@ void Crazyflie::handleRequests(
     } else {
       for (size_t i = 0; i < 10; ++i) {
         uint8_t ping = 0xFF;
-        sendPacket(&ping, sizeof(ping), ack);
-        handleBatchAck(ack);
+        sendPacket(&ping, sizeof(ping), ack, useSafeLink);
+        handleBatchAck(ack, crtpMode);
         // if (ack.ack && crtpPlatformRSSIAck::match(ack)) {
         //   sendPing = false;
         // }
@@ -893,25 +1133,33 @@ void Crazyflie::handleRequests(
 }
 
 void Crazyflie::handleBatchAck(
-  const Crazyradio::Ack& ack)
+  const Crazyradio::Ack& ack,
+  bool crtpMode)
 {
   if (ack.ack) {
     for (auto& request : m_batchRequests) {
-      if (crtp(ack.data[0]) == crtp(request.request[0])
-          && memcmp(&ack.data[1], &request.request[1], request.numBytesToMatch) == 0
-          && !request.finished) {
-        request.ack = ack;
-        request.finished = true;
-        ++m_numRequestsFinished;
-        // std::cout << "gotack" <<std::endl;
-        return;
+      if (crtpMode) {
+        if ((crtp(ack.data[0]) == crtp(request.request[0]) || ack.data[0] == request.request[0])
+            && memcmp(&ack.data[1], &request.request[1], request.numBytesToMatch) == 0
+            && !request.finished) {
+          request.ack = ack;
+          request.finished = true;
+          ++m_numRequestsFinished;
+          // std::cout << "gotack" <<std::endl;
+          return;
+        }
+      } else {
+        if (!request.finished
+            && memcmp(&ack.data[0], &request.request[0], request.numBytesToMatch) == 0) {
+          request.ack = ack;
+          request.finished = true;
+          ++m_numRequestsFinished;
+          // std::cout << m_numRequestsFinished / (float)m_batchRequests.size() * 100.0 << " %" << std::endl;
+          return;
+        }
       }
     }
-    // handle generic ack
-    handleAck(ack);
-    // crtp c(ack.data[0]);
-    //std::cout << "didnt handle ack " << (int) c.port << " " << (int) c.channel << " " << (int) ack.data[1] << " " << (int) ack.data[2] << std::endl;
-    // TODO: generic handle ack here?
+    // ack is (also) handled in sendPacket
   }
 }
 
