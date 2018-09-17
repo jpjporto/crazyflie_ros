@@ -42,6 +42,7 @@ Crazyflie::Crazyflie(
   , m_emptyAckCallback(nullptr)
   , m_linkQualityCallback(nullptr)
   , m_consoleCallback(nullptr)
+  , m_logger(logger)
 {
   int datarate;
   int channel;
