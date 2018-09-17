@@ -11,6 +11,19 @@
 #include <map>
 #include <chrono>
 
+class Logger
+{
+public:
+  Logger() {}
+  virtual ~Logger() {}
+
+  virtual void info(const std::string& msg) {}
+  virtual void warning(const std::string& msg) {}
+  virtual void error(const std::string& msg) {}
+};
+
+extern Logger EmptyLogger;
+
 class Crazyflie
 {
 public:
