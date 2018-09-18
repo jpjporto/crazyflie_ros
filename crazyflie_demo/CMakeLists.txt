@@ -85,7 +85,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES crazyflie_demo
- CATKIN_DEPENDS roscpp
+ CATKIN_DEPENDS roscpp crazyflie_driver
 #  DEPENDS system_lib
 )
 
@@ -114,7 +114,7 @@ add_executable(setpoint_pub src/setpoint_pub.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(crazyflie_demo_node crazyflie_demo_generate_messages_cpp)
+add_dependencies(ext_pos_vicon ${catkin_EXPORTED_TARGETS})
 
 # Specify libraries to link a library or executable target against
 target_link_libraries(quadrotor_teleop
